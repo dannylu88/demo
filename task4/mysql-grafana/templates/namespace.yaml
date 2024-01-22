@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grafana
+  labels:
+    app: grafana

@@ -1,0 +1,66 @@
+---
+- name: SONY playbook
+  hosts: 'all'
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Update all packages
+      yum:
+        name: "*"
+        state: latest
+        
+  - name: Permit traffic in default zone for https service
+    ansible.posix.firewalld:
+      service: https
+      permanent: true
+      state: enabled
+
+  - name: Allow ssh access from a ip
+    community.general.ufw:
+      rule: allow
+      port: '22'
+      from_ip: 11.11.11.11 # Some random ip we want
+
+    - name: Install basic packages
+      yum:
+        name: ['dig', 'tcpdump', 'curl', 'htop', 'firewalld', 'python-firewall', 'ufw']
+        state: present
+
+    - name: Add devops user
+      user:
+        name: devops
+        password: 1l1k3D3v0ps
+
+    - name: Set authorized key
+      ansible.posix.authorized_key:
+        user: devops
+        state: present
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGtVnYj7WaYA/vJjvSNZvCO0YJWfWZsL/MAkF0hgt0Ja1DE5N2EbJa89vnbuWGvz0QTRTf24hWuPpED8IxfV9DvbZZtj5yaEuAaAxLqrPxOBH4kDsVr0vimmGTG8FLdp53QYaRAW65AywHcyWPUQLjeOX6YWmvW/I8gEZvRZWBpjZ2Y+18ChdUY+3dtl8axdFS+PTH+XOeUjgkmmqPtA+j2owe48PAG7SX8MszZnOO0W466yTkkcR7awFoMm5UqiX7lOutQLFJn+6KXrP/eM44OQuR1Sq023Pb2z4831mYbHZo5fseVhQB3Zw9DAmzCKORg3Rkmh5tRO6/GO0abr73sBnZ20zmVpDURz0UQLH/6TBlXlmHG7QLs1sRNGLDCHU88r4HWz9XubCNb2hjdfEewgqSS6nIAev52hYPAcUhLCY6oJgILpcAo8q0tsj/fQocZNNbkSQ8nrTPJFeLqrTOQq4upByyDg1ix6rsfEl3eH7o0piKkCCXd8BTimfXz8qMsXZkZWKTGC0jMNZ+obSe6JlS4SDG+Khk10Am8KbQ6EoasYif9GHw67/zONsIXktLmVmaO8XWtkHiFvFO4ju8DkvjdANM/JjUWsVKkoQUcwZxt635VrLr0Dn5P+jfBtdjDFUPnFouJXENxfyOG4CbpvHHlu8yM86Hu9SmU49uzQ== mcathcar@GBLOHQV30000025"
+
+  - name: Modify nofile soft limit
+    community.general.pam_limits:
+      domain: devops
+      limit_type: soft
+      limit_item: nofile
+      value: 2048
+
+  - name: Modify nofile hard limit
+    community.general.pam_limits:
+      domain: devops
+      limit_type: hard
+      limit_item: fsize
+      value: 2097152
+      use_max: true
+
+  - ansible.posix.sysctl:
+      name: net.ipv4.ip_forward
+      value: '0'
+      sysctl_set: true
+      state: present
+      reload: true
+
+  - name: Deny all IPv6 traffic to tcp port 20 on this host
+    community.general.ufw:
+      rule: deny
+      proto: tcp
+      from_ip: any

@@ -1,0 +1,6 @@
+mysql:
+  password: MTIzNDU2 # 123456
+  replicas: 1
+
+grafana:
+  init_command: ['sh', '-c', "export GF_DATABASE_TYPE=mysql; export GF_DATABASE_HOST=mysql-0.mysql.mysql.svc.cluster.local:3306; export GF_DATABASE_USER=root; export GF_DATABASE_PASSWORD=123456"]

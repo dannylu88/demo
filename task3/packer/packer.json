@@ -1,0 +1,54 @@
+{
+  "variables": {
+    "aws_access_key": null,
+    "aws_secret_key": null,
+    "source_ami": "ami-0230bd60aa48260c6",
+    "ami_version": "1.2",
+    "aws_region": "us-east-1",
+    "ssh_user": "ec2-user",
+    "vpc_id": "",
+    "subnet_id": ""
+  },
+  "builders": [
+    {
+      "ami_regions": [
+        "us-east-1"
+      ],
+      "type": "amazon-ebs",
+      "communicator": "ssh",
+      "ssh_pty": true,
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "ssh_username": "{{user `ssh_user`}}",
+      "associate_public_ip_address": true,
+      "source_ami": "{{user `source_ami`}}",
+      "instance_type": "t3.micro",
+      "tags": {}
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
+    },
+    {
+      "type": "shell",
+      "script": "./provisioners/scripts/bootstrap.sh"
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "./provisioners/ansible/setup-server.yml"
+    },
+    {
+      "type": "ansible",
+      "galaxy_command": "ansible-galaxy collection install ginigangadharan.wordpress"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "manifest",
+      "output": "manifest.json",
+      "strip_path": true
+    }
+  ]
+}
